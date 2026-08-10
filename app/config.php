@@ -1,6 +1,6 @@
 <?php
 // Database configuration
-$db_host = '127.0.0.1';
+$db_host = 'localhost';
 $db_user = 'root';
 $db_pass = 'US@shopify!@#68';
 $db_name = 'shopee_live';
