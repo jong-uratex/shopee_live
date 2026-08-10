@@ -1,6 +1,14 @@
 <?php
 // Run this script once to create the `users` table and a default admin user.
 require_once __DIR__ . '/config.php';
+
+if (!class_exists('mysqli')) {
+    http_response_code(500);
+    echo "Server configuration error: PHP MySQLi extension is not available.\n";
+    echo "Install/enable the extension (e.g. on Debian/Ubuntu: `sudo apt install php-mysql`) and restart your web server/PHP-FPM.";
+    exit;
+}
+
 $mysqli = new mysqli($db_host, $db_user, $db_pass);
 if ($mysqli->connect_errno) {
     die('DB connect error: ' . $mysqli->connect_error);
