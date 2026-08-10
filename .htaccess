@@ -1,0 +1,9 @@
+# Apache rules to protect sensitive directories/files
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^(scripts|vendor|\.git) - [F,L]
+</IfModule>
+
+<FilesMatch "^(config\.php|create_tables\.sql)$">
+  Require all denied
+</FilesMatch>

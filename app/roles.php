@@ -1,5 +1,6 @@
 <?php
 // Minimal roles management UI: list, create, delete roles (for demo purposes only)
+require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/config.php';
 $pdo = pdo_connect();
 

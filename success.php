@@ -1,8 +1,8 @@
 <?php
-session_start();
+require_once __DIR__ . '/app/security.php';
 if (empty($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
+  header('Location: login.php');
+  exit;
 }
 $username = htmlspecialchars($_SESSION['username'] ?? '');
 ?>
