@@ -12,8 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             $pdo = pdo_connect();
-            $stmt = $pdo->prepare('SELECT id, username, password FROM users WHERE username = :u OR email = :u LIMIT 1');
-            $stmt->execute([':u' => $username]);
+            $stmt = $pdo->prepare('SELECT id, username, password FROM users WHERE username = :u OR email = :e LIMIT 1');
+            $stmt->execute([':u' => $username, ':e' => $username]);
             $user = $stmt->fetch();
             if ($user && password_verify($password, $user['password'])) {
                 session_regenerate_id(true);
