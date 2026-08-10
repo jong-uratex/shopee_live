@@ -2,7 +2,7 @@
 // DB credentials
 $db_host = 'localhost';
 $db_user = 'root';
-$db_pass = 'US@shopify!@#68';
+$db_pass = 'UX@shopify!@#68';
 $db_name = 'shopee_live';
 
 function pdo_connect() {
