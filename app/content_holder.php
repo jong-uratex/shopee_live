@@ -1,6 +1,6 @@
 <?php
 $page = $_GET['page'] ?? 'main';
-$allowed = ['main', 'products', 'profile'];
+$allowed = ['main', 'products', 'profile', 'users'];
 if (!in_array($page, $allowed, true)) {
     $page = 'main';
 }

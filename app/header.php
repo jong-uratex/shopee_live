@@ -7,8 +7,11 @@
     </div>
   </div>
   <div class="header-actions">
-    <a href="https://dev.uratex.com.ph/jong/shopee_live/dashboard/">Dashboard</a>
-    <a href="https://dev.uratex.com.ph/jong/shopee_live/dashboard/?page=profile">Profile</a>
-    <a href="https://dev.uratex.com.ph/jong/shopee_live/logout/">Logout</a>
+    <a href="/jong/shopee_live/dashboard/">Dashboard</a>
+    <?php if (!empty($_SESSION['is_superadmin']) || (isset($_SESSION['role_slug']) && $_SESSION['role_slug'] === 'admin')): ?>
+      <a href="/jong/shopee_live/user.php">Users</a>
+    <?php endif; ?>
+    <a href="/jong/shopee_live/dashboard/?page=profile">Profile</a>
+    <a href="/jong/shopee_live/logout/">Logout</a>
   </div>
 </header>

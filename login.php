@@ -41,9 +41,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $pdo  = pdo_connect();
             $stmt = $pdo->prepare(
-                'SELECT id, username, password
-                 FROM users
-                 WHERE username = :u OR email = :e
+                'SELECT u.id, u.username, u.password, u.is_superadmin,
+                        r.slug AS role_slug, r.name AS role_name
+                 FROM users u
+                 LEFT JOIN roles r ON r.id = u.role_id
+                 WHERE u.username = :u OR u.email = :e
                  LIMIT 1'
             );
             $stmt->execute([
@@ -58,8 +60,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 session_regenerate_id(true);
 
                 // Store only what you need
-                $_SESSION['user_id']  = (int) $user['id'];
-                $_SESSION['username'] = $user['username'];
+                $_SESSION['user_id']      = (int) $user['id'];
+                $_SESSION['username']     = $user['username'];
+                $_SESSION['role_slug']    = $user['role_slug'] ?? null;
+                $_SESSION['role_name']    = $user['role_name'] ?? 'User';
+                $_SESSION['is_superadmin'] = !empty($user['is_superadmin']);
 
                 // Force session data to be written before redirect
                 session_write_close();

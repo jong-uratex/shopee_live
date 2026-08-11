@@ -78,3 +78,24 @@ function validate_csrf(?string $token): bool
         && is_string($token)
         && hash_equals($_SESSION['csrf_token'], $token);
 }
+
+/**
+ * Return true when the current session user is an admin or super admin.
+ */
+function is_admin_or_superadmin(): bool
+{
+    return !empty($_SESSION['is_superadmin'])
+        || (isset($_SESSION['role_slug']) && $_SESSION['role_slug'] === 'admin');
+}
+
+/**
+ * Require that the current session user is admin or super admin.
+ */
+function require_admin_or_superadmin(): void
+{
+    if (!is_admin_or_superadmin()) {
+        http_response_code(403);
+        echo '<div class="panel"><h1>Forbidden</h1><p>Only admin or super admin can access this page.</p></div>';
+        exit;
+    }
+}
