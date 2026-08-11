@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 session_regenerate_id(true);
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
-                header('Location: success.php');
+                header('Location: /app/success.php');
                 exit;
             } else {
                 $err = 'Invalid credentials.';
