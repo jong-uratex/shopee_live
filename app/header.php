@@ -1,8 +1,8 @@
 <header class="main-header">
   <div class="main-header__brand">
-    <img src="https://via.placeholder.com/44/1d4ed8/ffffff?text=S" alt="Shopee Live Logo">
+    <img src="https://uratex.com.ph/cdn/shop/files/Final_Logo.png" alt="Uratex Philippines Logo">
     <div>
-      <span class="brand-title">Shopee Live</span>
+      <span class="brand-title">Uratex Admin</span>
       <span class="brand-subtitle">Admin Dashboard</span>
     </div>
   </div>
