@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 session_write_close();
 
                 // Redirect to the clean dashboard URL
-                header('Location: dashboard');
+                header('Location: /jong/shopee_live/dashboard');
                 exit;
             }
 
