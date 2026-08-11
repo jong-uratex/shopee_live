@@ -3,6 +3,7 @@ require_once __DIR__ . '/app/security.php';
 require_once __DIR__ . '/app/config.php';
 
 $err = '';
+$db_status = pdo_connection_status();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $u = trim($_POST['username'] ?? '');
     $p = $_POST['password'] ?? '';
@@ -57,6 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="/">Home</a>
       </div>
     </form>
+    <footer class="text-center mt-4 text-muted small">
+      <div>© 2026 by Jenor Ricafort | <?php echo htmlspecialchars($db_status); ?></div>
+    </footer>
   </div>
 </body>
 </html>

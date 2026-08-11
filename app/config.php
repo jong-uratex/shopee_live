@@ -12,7 +12,7 @@ if (php_sapi_name() !== 'cli' && realpath(__FILE__) === realpath($_SERVER['SCRIP
     exit;
 }
 
-function pdo_connect() {
+function pdo_connect($halt_on_error = true) {
     global $db_host, $db_user, $db_pass, $db_name;
     $dsn = "mysql:host=$db_host;dbname=$db_name;charset=utf8mb4";
     try {
@@ -23,8 +23,21 @@ function pdo_connect() {
         ];
         return new PDO($dsn, $db_user, $db_pass, $opts);
     } catch (PDOException $e) {
-        http_response_code(500);
-        echo 'DB connection error: ' . htmlspecialchars($e->getMessage());
-        exit;
+        if ($halt_on_error) {
+            http_response_code(500);
+            echo 'DB connection error: ' . htmlspecialchars($e->getMessage());
+            exit;
+        }
+        throw $e;
+    }
+}
+
+function pdo_connection_status() {
+    try {
+        $pdo = pdo_connect(false);
+        $pdo = null;
+        return 'Database: Connected';
+    } catch (PDOException $e) {
+        return 'Database: Disconnected';
     }
 }
