@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/app/security.php';
 if (empty($_SESSION['user_id'])) {
-  header('Location: login.php');
+  header('Location: /jong/shopee_live/login.php');
   exit;
 }
 $username = htmlspecialchars($_SESSION['username'] ?? '');
