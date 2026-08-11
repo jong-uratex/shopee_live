@@ -15,11 +15,11 @@ if (php_sapi_name() !== 'cli' && realpath(__FILE__) === realpath($_SERVER['SCRIP
     exit;
 }
 
-// Normalize host: remove www prefix if present
-if (isset($_SERVER['HTTP_HOST']) && str_starts_with($_SERVER['HTTP_HOST'], 'www.')) {
-    $host = substr($_SERVER['HTTP_HOST'], 4);
+// Canonical host enforcement
+$canonicalHost = 'dev.uratex.com.ph';
+if (isset($_SERVER['HTTP_HOST']) && strcasecmp($_SERVER['HTTP_HOST'], $canonicalHost) !== 0) {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $url = $protocol . '://' . $host . ($_SERVER['REQUEST_URI'] ?? '/');
+    $url = $protocol . '://' . $canonicalHost . ($_SERVER['REQUEST_URI'] ?? '/');
     header('Location: ' . $url, true, 301);
     exit;
 }
