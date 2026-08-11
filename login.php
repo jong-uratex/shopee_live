@@ -2,54 +2,39 @@
 /**
  * Login Controller
  *
- * Handles user authentication via username or email + password.
- * On success: regenerates the session ID (session fixation protection),
- * stores essential user data in $_SESSION, and redirects to success.php.
- *
- * Requirements:
- *   - app/security.php  → must start the session and contain no output
- *   - app/config.php    → provides pdo_connect() and pdo_connection_status()
+ * Authenticates a user by username or email + password.
+ * On success:
+ *   1. Regenerates the session ID (session-fixation protection)
+ *   2. Stores minimal user data in $_SESSION
+ *   3. Redirects to success.php
  *
  * @author  Jenor Ricafort
- * @version 2026-08
  */
 
 declare(strict_types=1);
 
-// ---------------------------------------------------------------------------
-// Bootstrap
-// ---------------------------------------------------------------------------
-
-// Enable full error reporting during development.
-// In production: set display_errors = 0 and log errors instead.
+// Development only – turn off in production
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
 
 require_once __DIR__ . '/app/security.php';
 require_once __DIR__ . '/app/config.php';
 
-// Safety net: guarantee an active session even if security.php
-// is modified or fails to call session_start().
+// Extra safety (security.php should already have started the session)
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-// ---------------------------------------------------------------------------
-// Variables
-// ---------------------------------------------------------------------------
-
 $err       = '';
 $db_status = pdo_connection_status();
 
-// ---------------------------------------------------------------------------
-// Form Handling (POST only)
-// ---------------------------------------------------------------------------
-
+// ------------------------------------------------------------------
+// Handle login form
+// ------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    // Basic presence validation
     if ($username === '' || $password === '') {
         $err = 'Please enter username/email and password.';
     } else {
@@ -68,35 +53,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // Verify password using the secure password_verify() function
             if ($user && password_verify($password, $user['password'])) {
-                // -------------------------------------------------------
-                // Successful authentication
-                // -------------------------------------------------------
-
-                // Regenerate session ID to prevent session fixation attacks.
-                // Must be called while the session is still active.
+                // Prevent session fixation
                 session_regenerate_id(true);
 
-                // Store only the minimum data needed for the authenticated state
+                // Store only what you need
                 $_SESSION['user_id']  = (int) $user['id'];
                 $_SESSION['username'] = $user['username'];
 
-                // Redirect after successful login.
-                // Relative path is preferred when both files share the same directory.
-                // Uncomment the absolute version only if your document root requires it.
+                // Force session data to be written before redirect
+                session_write_close();
+
+                // Relative redirect – most reliable when both files are in the same folder
                 header('Location: success.php');
-                // header('Location: /jong/shopee_live/success.php');
                 exit;
             }
 
-            // Authentication failed
             $err = 'Invalid credentials.';
 
         } catch (Throwable $e) {
-            // In production you should log the full exception and show a generic message
+            // Log the real error in production
+            // error_log($e->getMessage());
             $err = 'An error occurred. Please try again later.';
-            // Optional: error_log($e->getMessage());
         }
     }
 }
