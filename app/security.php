@@ -53,8 +53,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 function require_login(): void
 {
     if (empty($_SESSION['user_id'])) {
-        // Use a relative or correctly configured path
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 }
