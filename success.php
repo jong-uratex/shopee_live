@@ -7,7 +7,7 @@ require_once __DIR__ . '/app/security.php';
 
 // Not logged in → send back to login
 if (empty($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 

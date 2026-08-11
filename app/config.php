@@ -41,3 +41,20 @@ function pdo_connection_status() {
         return 'Database: Disconnected';
     }
 }
+
+function get_network_status(): string {
+    $connected = @fsockopen('8.8.8.8', 53, $errno, $errstr, 2);
+    if ($connected) {
+        fclose($connected);
+        return 'Online';
+    }
+    return 'Offline';
+}
+
+function get_current_location(): string {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    if ($ip === '127.0.0.1' || $ip === '::1') {
+        return 'Localhost';
+    }
+    return $ip;
+}

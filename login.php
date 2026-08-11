@@ -64,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Force session data to be written before redirect
                 session_write_close();
 
-                // Relative redirect – most reliable when both files are in the same folder
-                header('Location: success.php');
+                // Redirect to the clean dashboard URL
+                header('Location: dashboard');
                 exit;
             }
 

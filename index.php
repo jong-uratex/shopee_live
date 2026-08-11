@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/app/security.php';
-// Redirect to success if logged in, otherwise to login
+// Redirect to dashboard if logged in, otherwise to login
 if (!empty($_SESSION['user_id'])) {
-    header('Location: success.php');
+    header('Location: dashboard');
     exit;
 }
-header('Location: login.php');
+header('Location: login');
 exit;
