@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (empty($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: /jong/shopee_live/login/');
     exit;
 }
 $username = htmlspecialchars($_SESSION['username'] ?? '');

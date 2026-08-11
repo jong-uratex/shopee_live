@@ -53,7 +53,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 function require_login(): void
 {
     if (empty($_SESSION['user_id'])) {
-        header('Location: /jong/shopee_live/login');
+        header('Location: /jong/shopee_live/login/');
         exit;
     }
 }

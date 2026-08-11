@@ -9,5 +9,5 @@ if (ini_get('session.use_cookies')) {
     );
 }
 session_destroy();
-header('Location: https://dev.uratex.com.ph/jong/shopee_live/login');
+header('Location: /jong/shopee_live/login/');
 exit;

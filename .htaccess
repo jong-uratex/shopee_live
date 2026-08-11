@@ -1,14 +1,16 @@
 # Apache rules to protect sensitive directories/files
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  RewriteBase /jong/shopee_live/
 
-  # Keep existing files and directories intact
+  # Keep existing files and directories intact, except the clean app routes.
+  RewriteCond %{REQUEST_URI} !^/(dashboard|login|logout|success)(/|$)
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Clean URLs without .php extension
-  RewriteRule ^(dashboard|login|logout|success)$ $1.php [L,QSA]
+  # Clean URLs without .php extension, including optional trailing slash
+  RewriteRule ^(dashboard|login|logout|success)/?$ $1.php [L,QSA]
   RewriteRule ^$ index.php [L]
 
   # Prevent direct access to implementation folders
