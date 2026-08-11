@@ -15,15 +15,6 @@ if (php_sapi_name() !== 'cli' && realpath(__FILE__) === realpath($_SERVER['SCRIP
     exit;
 }
 
-// Canonical host enforcement
-$canonicalHost = 'dev.uratex.com.ph';
-if (isset($_SERVER['HTTP_HOST']) && strcasecmp($_SERVER['HTTP_HOST'], $canonicalHost) !== 0) {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $url = $protocol . '://' . $canonicalHost . ($_SERVER['REQUEST_URI'] ?? '/');
-    header('Location: ' . $url, true, 301);
-    exit;
-}
-
 // Security headers
 header('X-Frame-Options: SAMEORIGIN');
 header('X-Content-Type-Options: nosniff');
