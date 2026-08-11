@@ -6,7 +6,7 @@
     </div>
   </div>
 
-  <form method="post" action="dashboard?page=profile">
+  <form method="post" action="/jong/shopee_live/dashboard/?page=profile">
     <div class="form-group">
       <label>Username</label>
       <input class="form-control" value="<?php echo htmlspecialchars($_SESSION['username'] ?? 'admin'); ?>" readonly>

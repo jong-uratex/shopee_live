@@ -15,6 +15,15 @@ if (php_sapi_name() !== 'cli' && realpath(__FILE__) === realpath($_SERVER['SCRIP
     exit;
 }
 
+// Normalize host: remove www prefix if present
+if (isset($_SERVER['HTTP_HOST']) && str_starts_with($_SERVER['HTTP_HOST'], 'www.')) {
+    $host = substr($_SERVER['HTTP_HOST'], 4);
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $url = $protocol . '://' . $host . ($_SERVER['REQUEST_URI'] ?? '/');
+    header('Location: ' . $url, true, 301);
+    exit;
+}
+
 // Security headers
 header('X-Frame-Options: SAMEORIGIN');
 header('X-Content-Type-Options: nosniff');

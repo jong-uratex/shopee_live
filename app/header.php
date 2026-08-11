@@ -7,8 +7,8 @@
     </div>
   </div>
   <div class="header-actions">
-    <a href="/jong/shopee_live/dashboard">Dashboard</a>
-    <a href="/jong/shopee_live/dashboard?page=profile">Profile</a>
-    <a href="/jong/shopee_live/logout">Logout</a>
+    <a href="/jong/shopee_live/dashboard/">Dashboard</a>
+    <a href="/jong/shopee_live/dashboard/?page=profile">Profile</a>
+    <a href="/jong/shopee_live/logout/">Logout</a>
   </div>
 </header>
