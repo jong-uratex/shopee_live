@@ -4,6 +4,8 @@ $db_host = 'localhost';
 $db_user = 'root';
 $db_pass = 'UX@shopify!@#68';
 $db_name = 'shopee_live';
+$db_driver = extension_loaded('pdo_mysql') ? 'mysql' : 'sqlite';
+$db_sqlite_path = __DIR__ . '/../data/shopee_live.sqlite';
 
 // Shopee Partner credentials
 $partnerId = 2041083;
@@ -26,14 +28,25 @@ if (php_sapi_name() !== 'cli' && realpath(__FILE__) === realpath($_SERVER['SCRIP
 }
 
 function pdo_connect($halt_on_error = true) {
-    global $db_host, $db_user, $db_pass, $db_name;
-    $dsn = "mysql:host=$db_host;dbname=$db_name;charset=utf8mb4";
+    global $db_host, $db_user, $db_pass, $db_name, $db_driver, $db_sqlite_path;
+
     try {
         $opts = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
         ];
+
+        if ($db_driver === 'sqlite') {
+            $dir = dirname($db_sqlite_path);
+            if (!is_dir($dir)) {
+                mkdir($dir, 0777, true);
+            }
+            $dsn = 'sqlite:' . $db_sqlite_path;
+            return new PDO($dsn, null, null, $opts);
+        }
+
+        $dsn = "mysql:host=$db_host;dbname=$db_name;charset=utf8mb4";
         return new PDO($dsn, $db_user, $db_pass, $opts);
     } catch (PDOException $e) {
         if ($halt_on_error) {

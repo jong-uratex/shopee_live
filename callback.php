@@ -161,7 +161,22 @@ $result = postJson($url, $payload);
 header('Content-Type: application/json');
 
 if ($result['success']) {
-    // Success – return the raw response from Shopee
+    $decoded = json_decode((string) $result['response'], true);
+    if (is_array($decoded)) {
+        $accessToken = isset($decoded['access_token']) ? (string) $decoded['access_token'] : '';
+        $refreshToken = isset($decoded['refresh_token']) ? (string) $decoded['refresh_token'] : '';
+        $expireIn = isset($decoded['expire_in']) ? (int) $decoded['expire_in'] : 0;
+        $resolvedShopId = $shopId ?? 0;
+
+        if (isset($decoded['shop_id_list']) && is_array($decoded['shop_id_list']) && !empty($decoded['shop_id_list'])) {
+            $resolvedShopId = (int) $decoded['shop_id_list'][0];
+        }
+
+        if ($accessToken !== '' && $refreshToken !== '' && $resolvedShopId > 0) {
+            saveShopeeOauthToDb($accessToken, $refreshToken, $resolvedShopId, $expireIn);
+        }
+    }
+
     echo $result['response'];
 } else {
     http_response_code($result['http_code'] ?: 500);

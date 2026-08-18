@@ -23,8 +23,50 @@ function uuid_v4() {
 
 try {
     $pdo = pdo_connect();
+    $isSqlite = !extension_loaded('pdo_mysql');
 
-    $rolesTableSql = <<<SQL
+    if ($isSqlite) {
+        $rolesTableSql = <<<'SQL'
+CREATE TABLE IF NOT EXISTS roles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name VARCHAR(100) NOT NULL,
+  slug VARCHAR(100) NOT NULL UNIQUE,
+  description TEXT DEFAULT NULL,
+  permissions TEXT DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+SQL;
+
+        $usersTableSql = <<<'SQL'
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  uuid CHAR(36) NOT NULL UNIQUE,
+  username VARCHAR(100) NOT NULL UNIQUE,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  role_id INTEGER DEFAULT NULL,
+  status VARCHAR(20) DEFAULT 'active',
+  is_superadmin INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (role_id) REFERENCES roles(id)
+);
+SQL;
+
+        $oauthTableSql = <<<'SQL'
+CREATE TABLE IF NOT EXISTS shopee_oauth_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  shop_id BIGINT NOT NULL UNIQUE,
+  access_token TEXT NOT NULL,
+  refresh_token TEXT NOT NULL,
+  expire_in INTEGER NOT NULL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+SQL;
+    } else {
+        $rolesTableSql = <<<'SQL'
 CREATE TABLE IF NOT EXISTS roles (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
@@ -36,7 +78,7 @@ CREATE TABLE IF NOT EXISTS roles (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 SQL;
 
-    $usersTableSql = <<<SQL
+        $usersTableSql = <<<'SQL'
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   uuid CHAR(36) NOT NULL UNIQUE,
@@ -54,10 +96,7 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 SQL;
 
-    $pdo->exec($rolesTableSql);
-    $pdo->exec($usersTableSql);
-
-    $oauthTableSql = <<<SQL
+        $oauthTableSql = <<<'SQL'
 CREATE TABLE IF NOT EXISTS shopee_oauth_tokens (
   id INT AUTO_INCREMENT PRIMARY KEY,
   shop_id BIGINT NOT NULL UNIQUE,
@@ -68,18 +107,33 @@ CREATE TABLE IF NOT EXISTS shopee_oauth_tokens (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 SQL;
+    }
 
+    $pdo->exec($rolesTableSql);
+    $pdo->exec($usersTableSql);
     $pdo->exec($oauthTableSql);
 
-    $insertRole = $pdo->prepare(
-        'INSERT INTO roles (name, slug, description, permissions) VALUES (:name, :slug, :description, JSON_OBJECT())'
-        . ' ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description)'
-    );
-    $insertRole->execute([
-        ':name' => $defaultAdmin['role_name'], 
-        ':slug' => $defaultAdmin['role_slug'],
-        ':description' => $defaultAdmin['role_description'],
-    ]);
+    if ($isSqlite) {
+        $insertRole = $pdo->prepare(
+            'INSERT OR IGNORE INTO roles (name, slug, description, permissions) VALUES (:name, :slug, :description, :permissions)'
+        );
+        $insertRole->execute([
+            ':name' => $defaultAdmin['role_name'],
+            ':slug' => $defaultAdmin['role_slug'],
+            ':description' => $defaultAdmin['role_description'],
+            ':permissions' => '{}',
+        ]);
+    } else {
+        $insertRole = $pdo->prepare(
+            'INSERT INTO roles (name, slug, description, permissions) VALUES (:name, :slug, :description, JSON_OBJECT())'
+            . ' ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description)'
+        );
+        $insertRole->execute([
+            ':name' => $defaultAdmin['role_name'],
+            ':slug' => $defaultAdmin['role_slug'],
+            ':description' => $defaultAdmin['role_description'],
+        ]);
+    }
 
     $roleStmt = $pdo->prepare('SELECT id FROM roles WHERE slug = :slug LIMIT 1');
     $roleStmt->execute([':slug' => $defaultAdmin['role_slug']]);
@@ -95,9 +149,15 @@ SQL;
     $hash = password_hash($defaultAdmin['password'], PASSWORD_DEFAULT);
 
     if ($existingUser) {
-        $update = $pdo->prepare(
-            'UPDATE users SET username = :username, email = :email, password = :password, role_id = :role_id, is_superadmin = 1, status = "active", updated_at = NOW() WHERE id = :id'
-        );
+        if ($isSqlite) {
+            $update = $pdo->prepare(
+                'UPDATE users SET username = :username, email = :email, password = :password, role_id = :role_id, is_superadmin = 1, status = "active", updated_at = CURRENT_TIMESTAMP WHERE id = :id'
+            );
+        } else {
+            $update = $pdo->prepare(
+                'UPDATE users SET username = :username, email = :email, password = :password, role_id = :role_id, is_superadmin = 1, status = "active", updated_at = NOW() WHERE id = :id'
+            );
+        }
         $update->execute([
             ':username' => $defaultAdmin['username'],
             ':email' => $defaultAdmin['email'],
@@ -107,10 +167,17 @@ SQL;
         ]);
         echo "Updated default admin user '{$defaultAdmin['username']}' with new password.\n";
     } else {
-        $insertUser = $pdo->prepare(
-            'INSERT INTO users (uuid, username, email, password, role_id, is_superadmin, status, created_at, updated_at) '
-            . 'VALUES (:uuid, :username, :email, :password, :role_id, 1, "active", NOW(), NOW())'
-        );
+        if ($isSqlite) {
+            $insertUser = $pdo->prepare(
+                'INSERT INTO users (uuid, username, email, password, role_id, is_superadmin, status, created_at, updated_at) '
+                . 'VALUES (:uuid, :username, :email, :password, :role_id, 1, "active", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)'
+            );
+        } else {
+            $insertUser = $pdo->prepare(
+                'INSERT INTO users (uuid, username, email, password, role_id, is_superadmin, status, created_at, updated_at) '
+                . 'VALUES (:uuid, :username, :email, :password, :role_id, 1, "active", NOW(), NOW())'
+            );
+        }
         $insertUser->execute([
             ':uuid' => uuid_v4(),
             ':username' => $defaultAdmin['username'],
