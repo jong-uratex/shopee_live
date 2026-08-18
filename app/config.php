@@ -5,6 +5,12 @@ $db_user = 'root';
 $db_pass = 'UX@shopify!@#68';
 $db_name = 'shopee_live';
 
+// Shopee Partner credentials
+$partnerId = 2041083;
+$partnerKey = 'shpk5a444c494c79715545596a714457424e684d784e796d49516458533454248';
+$host = 'https://partner.shopeemobile.com';
+$redirectUrl = 'http://dev.uratex.com.ph/jong/shopee_live/callback.php';
+
 // Prevent direct web access to this file
 if (php_sapi_name() !== 'cli' && realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
     http_response_code(403);
