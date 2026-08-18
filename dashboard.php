@@ -22,5 +22,44 @@ require_login();
     </main>
   </div>
   <?php include __DIR__ . '/app/footer.php'; ?>
+  
+  <script>
+    // Hamburger menu toggle
+    document.addEventListener('DOMContentLoaded', function() {
+      const hamburger = document.getElementById('hamburger-toggle');
+      const sideMenu = document.querySelector('.side-menu');
+      const appBody = document.querySelector('.app-body');
+
+      if (hamburger) {
+        hamburger.addEventListener('click', function() {
+          hamburger.classList.toggle('active');
+          sideMenu.classList.toggle('mobile-open');
+          appBody.classList.toggle('menu-open');
+        });
+
+        // Close menu when a menu item is clicked
+        const menuItems = sideMenu.querySelectorAll('.nav-list a');
+        menuItems.forEach(item => {
+          item.addEventListener('click', function() {
+            hamburger.classList.remove('active');
+            sideMenu.classList.remove('mobile-open');
+            appBody.classList.remove('menu-open');
+          });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+          const isClickInsideMenu = sideMenu.contains(event.target);
+          const isClickOnHamburger = hamburger.contains(event.target);
+          
+          if (!isClickInsideMenu && !isClickOnHamburger && sideMenu.classList.contains('mobile-open')) {
+            hamburger.classList.remove('active');
+            sideMenu.classList.remove('mobile-open');
+            appBody.classList.remove('menu-open');
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>

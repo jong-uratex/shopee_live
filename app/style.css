@@ -55,6 +55,39 @@ textarea {
   gap: 0.85rem;
 }
 
+/* Hamburger Menu */
+.hamburger-menu {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-right: 0.5rem;
+  z-index: 101;
+}
+
+.hamburger-menu span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--text);
+  margin: 6px 0;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.hamburger-menu.active span:nth-child(1) {
+  transform: rotate(45deg) translate(8px, 8px);
+}
+
+.hamburger-menu.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-menu.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
+}
+
 .main-header__brand img {
   width: 44px;
   border-radius: 0.75rem;
@@ -376,6 +409,7 @@ textarea {
   min-height: calc(100vh - 96px);
   position: sticky;
   top: 1rem;
+  transition: all 0.3s ease;
 }
 
 .menu-title {
@@ -715,14 +749,100 @@ textarea {
   }
 }
 
+@media (max-width: 768px) {
+  /* Show hamburger menu on tablet and mobile */
+  .hamburger-menu {
+    display: block;
+  }
+
+  /* Hide side menu by default on mobile */
+  .side-menu {
+    position: fixed;
+    left: 0;
+    top: 60px;
+    width: 100%;
+    max-width: 280px;
+    height: calc(100vh - 60px);
+    background: #ffffff;
+    z-index: 99;
+    transform: translateX(-100%);
+    box-shadow: 2px 0 10px rgba(31, 50, 77, 0.1);
+    border-radius: 0;
+    border: none;
+  }
+
+  /* Show side menu when active */
+  .side-menu.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Overlay when menu is open */
+  .app-body::before {
+    content: '';
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 98;
+  }
+
+  .app-body.menu-open::before {
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .search-bar {
+    width: 100%;
+  }
+}
+
 @media (max-width: 640px) {
-  .main-header,
+  .main-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .main-header__brand {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .brand-title {
+    font-size: 1rem !important;
+  }
+
+  .main-header__brand img {
+    width: 36px;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .search-bar {
+    width: 100%;
+  }
+
+  .search-input {
+    font-size: 16px;
+  }
+
   .footer-bar {
     flex-direction: column;
     align-items: stretch;
   }
-  .header-actions {
-    width: 100%;
+
+  .footer-status {
+    flex-wrap: wrap;
     justify-content: space-between;
   }
 }
