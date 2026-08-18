@@ -29,10 +29,21 @@ function saveShopeeOauthToDb(string $newAccessToken, string $newRefreshToken, in
 {
     try {
         $pdo = pdo_connect(false);
-        $stmt = $pdo->prepare(
-            'INSERT INTO shopee_oauth_tokens (shop_id, access_token, refresh_token, expire_in) VALUES (:shop_id, :access_token, :refresh_token, :expire_in) '
-            . 'ON DUPLICATE KEY UPDATE access_token = VALUES(access_token), refresh_token = VALUES(refresh_token), expire_in = VALUES(expire_in), updated_at = NOW()'
-        );
+        $isSqlite = stripos((string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME), 'sqlite') !== false;
+
+        if ($isSqlite) {
+            $stmt = $pdo->prepare(
+                'INSERT INTO shopee_oauth_tokens (shop_id, access_token, refresh_token, expire_in, updated_at) '
+                . 'VALUES (:shop_id, :access_token, :refresh_token, :expire_in, CURRENT_TIMESTAMP) '
+                . 'ON CONFLICT(shop_id) DO UPDATE SET access_token = excluded.access_token, refresh_token = excluded.refresh_token, expire_in = excluded.expire_in, updated_at = CURRENT_TIMESTAMP'
+            );
+        } else {
+            $stmt = $pdo->prepare(
+                'INSERT INTO shopee_oauth_tokens (shop_id, access_token, refresh_token, expire_in) VALUES (:shop_id, :access_token, :refresh_token, :expire_in) '
+                . 'ON DUPLICATE KEY UPDATE access_token = VALUES(access_token), refresh_token = VALUES(refresh_token), expire_in = VALUES(expire_in), updated_at = NOW()'
+            );
+        }
+
         $stmt->execute([
             ':shop_id' => $shopId,
             ':access_token' => $newAccessToken,
@@ -49,7 +60,7 @@ function refreshShopeeAccessToken(string $refreshToken, int $shopId): array
     global $partnerId, $partnerKey, $host;
 
     $path = '/api/v2/auth/token/get';
-    $timestamp = (int) round(microtime(true) * 1000);
+    $timestamp = (int) time();
     $sign = hash_hmac('sha256', (string) $partnerId . $path . (string) $timestamp, $partnerKey);
 
     $url = sprintf(
@@ -140,23 +151,22 @@ function fetchShopeeProducts(string $accessToken, int $shopId): array
     global $partnerId, $partnerKey, $host;
 
     $path = '/api/v2/product/get_item_list';
-    $timestamp = (int) round(microtime(true) * 1000);
+    $timestamp = (int) time();
     $sign = hash_hmac('sha256', (string) $partnerId . $path . (string) $timestamp, $partnerKey);
     $endpoint = sprintf(
-        '%s%s?partner_id=%s&timestamp=%s&sign=%s',
+        '%s%s?partner_id=%s&shop_id=%s&access_token=%s&timestamp=%s&sign=%s',
         $host,
         $path,
         $partnerId,
+        $shopId,
+        rawurlencode($accessToken),
         $timestamp,
         $sign
     );
 
     $payload = [
-        'access_token' => $accessToken,
-        'shop_id' => $shopId,
         'page_no' => 1,
         'page_size' => 20,
-        'partner_id' => $partnerId,
     ];
 
     $ch = curl_init($endpoint);
