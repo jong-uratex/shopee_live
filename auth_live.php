@@ -18,15 +18,20 @@ $redirectUrl = isset($redirectUrl) ? (string) $redirectUrl : 'http://dev.uratex.
 /**
  * Generate HMAC-SHA256 signature for Shopee partner requests.
  *
- * Shopee expects a signature built as:
- * HMAC-SHA256(partner_id + path + timestamp, partner_key)
- * Note: timestamp should be in milliseconds.
+ * Shopee expects the signature base string to be:
+ * partner_id + path + timestamp
+ * and the timestamp must be in milliseconds since Unix epoch.
  */
+function currentTimestampMs()
+{
+    return (int) round(microtime(true) * 1000);
+}
+
 function generateSignature($partnerId, $path, $timestamp, $partnerKey)
 {
-    // Convert to milliseconds if needed (if timestamp looks like seconds)
-    if ($timestamp < 10000000000) {
-        $timestamp = $timestamp * 1000;
+    // Shopee uses 13-digit millisecond timestamps. Accept either seconds or ms.
+    if ($timestamp < 100000000000) {
+        $timestamp = (int) $timestamp * 1000;
     }
     $baseString = (string) $partnerId . $path . (string) $timestamp;
     return hash_hmac('sha256', $baseString, $partnerKey);
@@ -91,7 +96,7 @@ if (isset($_GET['code'])) {
     }
 
     $path = '/api/v2/auth/token/get';
-    $timestamp = time();
+    $timestamp = currentTimestampMs();
     $sign = generateSignature($partnerId, $path, $timestamp, $partnerKey);
 
     $url = sprintf(
@@ -131,7 +136,7 @@ if (isset($_GET['code'])) {
 // STEP 2: Generate authorization link if no code is present.
 // --------------------------------------------------------------------------
 $path = '/api/v2/shop/auth_partner';
-$timestamp = time();
+$timestamp = currentTimestampMs();
 $sign = generateSignature($partnerId, $path, $timestamp, $partnerKey);
 
 $authUrl = sprintf(

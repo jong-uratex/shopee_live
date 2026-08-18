@@ -3,11 +3,16 @@ require_once __DIR__ . '/app/config.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
+function currentTimestampMs()
+{
+    return (int) round(microtime(true) * 1000);
+}
+
 function generateSignature($partnerId, $path, $timestamp, $partnerKey)
 {
-    // Convert to milliseconds if needed (if timestamp looks like seconds)
-    if ($timestamp < 10000000000) {
-        $timestamp = $timestamp * 1000;
+    // Shopee requires millisecond timestamps in the signature base string.
+    if ($timestamp < 100000000000) {
+        $timestamp = (int) $timestamp * 1000;
     }
     $baseString = (string) $partnerId . $path . (string) $timestamp;
     return hash_hmac('sha256', $baseString, $partnerKey);
@@ -65,7 +70,7 @@ if ($code === '') {
 }
 
 $path = '/api/v2/auth/token/get';
-$timestamp = time();
+$timestamp = currentTimestampMs();
 $sign = generateSignature($partnerId, $path, $timestamp, $partnerKey);
 
 $url = sprintf(

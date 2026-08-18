@@ -6,18 +6,22 @@ require_once __DIR__ . '/app/config.php';
  * Run this to verify your signature matches Shopee's expectations
  */
 
+function currentTimestampMs()
+{
+    return (int) round(microtime(true) * 1000);
+}
+
 function generateSignature($partnerId, $path, $timestamp, $partnerKey)
 {
-    // Convert to milliseconds if needed (if timestamp looks like seconds)
-    if ($timestamp < 10000000000) {
-        $timestamp = $timestamp * 1000;
+    if ($timestamp < 100000000000) {
+        $timestamp = (int) $timestamp * 1000;
     }
     $baseString = (string) $partnerId . $path . (string) $timestamp;
     return hash_hmac('sha256', $baseString, $partnerKey);
 }
 
 $path = '/api/v2/shop/auth_partner';
-$timestamp = time();
+$timestamp = currentTimestampMs();
 $sign = generateSignature($partnerId, $path, $timestamp, $partnerKey);
 
 echo "<h2>Shopee Signature Debug</h2>";
