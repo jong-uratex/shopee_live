@@ -5,6 +5,10 @@ header('Content-Type: application/json; charset=utf-8');
 
 function generateSignature($partnerId, $path, $timestamp, $partnerKey)
 {
+    // Convert to milliseconds if needed (if timestamp looks like seconds)
+    if ($timestamp < 10000000000) {
+        $timestamp = $timestamp * 1000;
+    }
     $baseString = (string) $partnerId . $path . (string) $timestamp;
     return hash_hmac('sha256', $baseString, $partnerKey);
 }

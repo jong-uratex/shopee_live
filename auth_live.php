@@ -19,10 +19,15 @@ $redirectUrl = isset($redirectUrl) ? (string) $redirectUrl : 'http://dev.uratex.
  * Generate HMAC-SHA256 signature for Shopee partner requests.
  *
  * Shopee expects a signature built as:
- * HMAC-SHA256(partner_key, partner_id + path + timestamp)
+ * HMAC-SHA256(partner_id + path + timestamp, partner_key)
+ * Note: timestamp should be in milliseconds.
  */
 function generateSignature($partnerId, $path, $timestamp, $partnerKey)
 {
+    // Convert to milliseconds if needed (if timestamp looks like seconds)
+    if ($timestamp < 10000000000) {
+        $timestamp = $timestamp * 1000;
+    }
     $baseString = (string) $partnerId . $path . (string) $timestamp;
     return hash_hmac('sha256', $baseString, $partnerKey);
 }
