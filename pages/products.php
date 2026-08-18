@@ -130,12 +130,26 @@ function refreshShopeeAccessToken(string $refreshToken, int $shopId): array
 
 function fetchShopeeProducts(string $accessToken, int $shopId): array
 {
-    $endpoint = 'https://partner.shopeemobile.com/api/v2/product/get_item_list';
+    global $partnerId, $partnerKey, $host;
+
+    $path = '/api/v2/product/get_item_list';
+    $timestamp = (int) round(microtime(true) * 1000);
+    $sign = hash_hmac('sha256', (string) $partnerId . $path . (string) $timestamp, $partnerKey);
+    $endpoint = sprintf(
+        '%s%s?partner_id=%s&timestamp=%s&sign=%s',
+        $host,
+        $path,
+        $partnerId,
+        $timestamp,
+        $sign
+    );
+
     $payload = [
         'access_token' => $accessToken,
         'shop_id' => $shopId,
         'page_no' => 1,
         'page_size' => 20,
+        'partner_id' => $partnerId,
     ];
 
     $ch = curl_init($endpoint);
