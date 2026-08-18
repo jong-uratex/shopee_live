@@ -37,6 +37,31 @@ function generateSignature($partnerId, $path, $timestamp, $partnerKey)
     return hash_hmac('sha256', $baseString, $partnerKey);
 }
 
+function renderDebugInfo(string $title, string $path, int $timestamp, string $sign, string $authUrl, array $extra = []): void
+{
+    $baseString = (string) $GLOBALS['partnerId'] . $path . (string) $timestamp;
+
+    header('Content-Type: text/html; charset=utf-8');
+    echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' . htmlspecialchars($title) . '</title>';
+    echo '<style>body{font-family:Arial,sans-serif;padding:24px;background:#111;color:#eee;} pre{background:#1a1a1a;padding:16px;border-radius:8px;overflow:auto;} a{color:#66b3ff;} .label{font-weight:bold;color:#fff;} .value{word-break:break-all;}</style>';
+    echo '</head><body>';
+    echo '<h2>' . htmlspecialchars($title) . '</h2>';
+    echo '<p><span class="label">Partner ID:</span> <span class="value">' . htmlspecialchars((string) $GLOBALS['partnerId']) . '</span></p>';
+    echo '<p><span class="label">Path:</span> <span class="value">' . htmlspecialchars($path) . '</span></p>';
+    echo '<p><span class="label">Timestamp (ms):</span> <span class="value">' . htmlspecialchars((string) $timestamp) . '</span></p>';
+    echo '<p><span class="label">Base String:</span> <span class="value">' . htmlspecialchars($baseString) . '</span></p>';
+    echo '<p><span class="label">Generated Signature:</span> <span class="value">' . htmlspecialchars($sign) . '</span></p>';
+    echo '<p><span class="label">Auth URL:</span></p><pre>' . htmlspecialchars($authUrl) . '</pre>';
+
+    if ($extra !== []) {
+        echo '<h3>Additional Info</h3><pre>' . htmlspecialchars(json_encode($extra, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . '</pre>';
+    }
+
+    echo '<p><a href="' . htmlspecialchars($authUrl) . '" target="_blank">Open auth URL</a></p>';
+    echo '</body></html>';
+    exit;
+}
+
 /**
  * Make a JSON POST request to Shopee.
  */
@@ -81,6 +106,30 @@ function postJson($url, array $payload)
 }
 
 // --------------------------------------------------------------------------
+// Debug mode: show exact signature details before redirecting.
+// --------------------------------------------------------------------------
+if (isset($_GET['debug'])) {
+    $path = '/api/v2/shop/auth_partner';
+    $timestamp = currentTimestampMs();
+    $sign = generateSignature($partnerId, $path, $timestamp, $partnerKey);
+    $authUrl = sprintf(
+        '%s%s?partner_id=%s&timestamp=%s&sign=%s&redirect=%s',
+        $host,
+        $path,
+        $partnerId,
+        $timestamp,
+        $sign,
+        rawurlencode($redirectUrl)
+    );
+
+    renderDebugInfo('Shopee Auth Debug', $path, $timestamp, $sign, $authUrl, [
+        'redirect_url' => $redirectUrl,
+        'host' => $host,
+        'partner_key_prefix' => substr($partnerKey, 0, 12) . '...',
+    ]);
+}
+
+// --------------------------------------------------------------------------
 // STEP 1: Handle redirect from Shopee authorization callback.
 // --------------------------------------------------------------------------
 if (isset($_GET['code'])) {
@@ -98,6 +147,28 @@ if (isset($_GET['code'])) {
     $path = '/api/v2/auth/token/get';
     $timestamp = currentTimestampMs();
     $sign = generateSignature($partnerId, $path, $timestamp, $partnerKey);
+
+    if (isset($_GET['debug_exchange'])) {
+        $debugUrl = sprintf(
+            '%s%s?partner_id=%s&timestamp=%s&sign=%s',
+            $host,
+            $path,
+            $partnerId,
+            $timestamp,
+            $sign
+        );
+        renderDebugInfo('Shopee Token Exchange Debug', $path, $timestamp, $sign, $debugUrl, [
+            'code' => $code,
+            'shop_id' => $shopId,
+            'main_account_id' => $mainAccountId,
+            'payload' => [
+                'code' => $code,
+                'partner_id' => $partnerId,
+                'shop_id' => $shopId,
+                'main_account_id' => $mainAccountId,
+            ],
+        ]);
+    }
 
     $url = sprintf(
         '%s%s?partner_id=%s&timestamp=%s&sign=%s',
