@@ -78,6 +78,25 @@ function postJson(string $url, array $payload): array
     ];
 }
 
+function saveShopeeOauthToDb(string $accessToken, string $refreshToken, int $shopId, int $expireIn): void
+{
+    try {
+        $pdo = pdo_connect(false);
+        $stmt = $pdo->prepare(
+            'INSERT INTO shopee_oauth_tokens (shop_id, access_token, refresh_token, expire_in) VALUES (:shop_id, :access_token, :refresh_token, :expire_in) '
+            . 'ON DUPLICATE KEY UPDATE access_token = VALUES(access_token), refresh_token = VALUES(refresh_token), expire_in = VALUES(expire_in), updated_at = NOW()'
+        );
+        $stmt->execute([
+            ':shop_id' => $shopId,
+            ':access_token' => $accessToken,
+            ':refresh_token' => $refreshToken,
+            ':expire_in' => $expireIn,
+        ]);
+    } catch (Throwable $e) {
+        error_log('Failed to save Shopee OAuth token: ' . $e->getMessage());
+    }
+}
+
 // --------------------------------------------------------------------------
 // Must have authorization code
 // --------------------------------------------------------------------------

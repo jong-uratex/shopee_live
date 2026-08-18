@@ -1,40 +1,47 @@
 <?php
 require_once __DIR__ . '/../app/config.php';
 
-function persistShopeeTokenConfig(string $newAccessToken, string $newRefreshToken, int $shopId): void
+function loadShopeeOauthFromDb(): ?array
 {
-    $configPath = __DIR__ . '/../app/config.php';
-    if (!is_file($configPath)) {
-        return;
+    try {
+        $pdo = pdo_connect(false);
+        $stmt = $pdo->query(
+            'SELECT shop_id, access_token, refresh_token, expire_in FROM shopee_oauth_tokens ORDER BY updated_at DESC LIMIT 1'
+        );
+        $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+        if (!$row) {
+            return null;
+        }
+
+        return [
+            'shop_id' => (int) ($row['shop_id'] ?? 0),
+            'access_token' => (string) ($row['access_token'] ?? ''),
+            'refresh_token' => (string) ($row['refresh_token'] ?? ''),
+            'expire_in' => (int) ($row['expire_in'] ?? 0),
+        ];
+    } catch (Throwable $e) {
+        error_log('Failed to load Shopee OAuth record: ' . $e->getMessage());
+        return null;
     }
+}
 
-    $contents = file_get_contents($configPath);
-    if ($contents === false) {
-        return;
+function saveShopeeOauthToDb(string $newAccessToken, string $newRefreshToken, int $shopId, int $expireIn): void
+{
+    try {
+        $pdo = pdo_connect(false);
+        $stmt = $pdo->prepare(
+            'INSERT INTO shopee_oauth_tokens (shop_id, access_token, refresh_token, expire_in) VALUES (:shop_id, :access_token, :refresh_token, :expire_in) '
+            . 'ON DUPLICATE KEY UPDATE access_token = VALUES(access_token), refresh_token = VALUES(refresh_token), expire_in = VALUES(expire_in), updated_at = NOW()'
+        );
+        $stmt->execute([
+            ':shop_id' => $shopId,
+            ':access_token' => $newAccessToken,
+            ':refresh_token' => $newRefreshToken,
+            ':expire_in' => $expireIn,
+        ]);
+    } catch (Throwable $e) {
+        error_log('Failed to save Shopee OAuth token: ' . $e->getMessage());
     }
-
-    $contents = preg_replace(
-        "/\$access_token\s*=\s*'([^']*)';/",
-        "\$access_token = '" . addslashes($newAccessToken) . "';",
-        $contents,
-        1
-    );
-
-    $contents = preg_replace(
-        "/\$refresh_token\s*=\s*'([^']*)';/",
-        "\$refresh_token = '" . addslashes($newRefreshToken) . "';",
-        $contents,
-        1
-    );
-
-    $contents = preg_replace(
-        "/\$shop_id\s*=\s*\d+;/",
-        "\$shop_id = " . (int) $shopId . ";",
-        $contents,
-        1
-    );
-
-    file_put_contents($configPath, $contents);
 }
 
 function refreshShopeeAccessToken(string $refreshToken, int $shopId): array
@@ -216,9 +223,10 @@ function fetchShopeeProducts(string $accessToken, int $shopId): array
     ];
 }
 
-$shopId = isset($shop_id) ? (int) $shop_id : 0;
-$accessToken = isset($access_token) ? (string) $access_token : '';
-$refreshToken = isset($refresh_token) ? (string) $refresh_token : '';
+$dbOauth = loadShopeeOauthFromDb();
+$shopId = $dbOauth['shop_id'] ?? (isset($shop_id) ? (int) $shop_id : 0);
+$accessToken = $dbOauth['access_token'] ?? (isset($access_token) ? (string) $access_token : '');
+$refreshToken = $dbOauth['refresh_token'] ?? (isset($refresh_token) ? (string) $refresh_token : '');
 $productsResult = [
     'success' => false,
     'message' => 'Missing Shopee access token or shop_id.',
@@ -248,7 +256,7 @@ if ($shopId > 0 && $accessToken !== '') {
             $accessToken = $refreshResult['access_token'];
             $refreshToken = $refreshResult['refresh_token'];
             $shopId = $refreshResult['shop_id'];
-            persistShopeeTokenConfig($accessToken, $refreshToken, $shopId);
+            saveShopeeOauthToDb($accessToken, $refreshToken, $shopId, 14399);
             $productsResult = fetchShopeeProducts($accessToken, $shopId);
         } else {
             $productsResult['message'] = $refreshResult['message'];

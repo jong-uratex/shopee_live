@@ -57,6 +57,20 @@ SQL;
     $pdo->exec($rolesTableSql);
     $pdo->exec($usersTableSql);
 
+    $oauthTableSql = <<<SQL
+CREATE TABLE IF NOT EXISTS shopee_oauth_tokens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  shop_id BIGINT NOT NULL UNIQUE,
+  access_token TEXT NOT NULL,
+  refresh_token TEXT NOT NULL,
+  expire_in INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SQL;
+
+    $pdo->exec($oauthTableSql);
+
     $insertRole = $pdo->prepare(
         'INSERT INTO roles (name, slug, description, permissions) VALUES (:name, :slug, :description, JSON_OBJECT())'
         . ' ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description)'

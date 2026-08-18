@@ -12,9 +12,11 @@ $host = 'https://partner.shopeemobile.com';
 $redirectUrl = 'http://dev.uratex.com.ph/jong/shopee_live/callback.php';
 
 // Stored Shopee OAuth session fields
-$access_token = '72796743714e4f55627a7773736a6e4e';
-$refresh_token = '63665158614c6a696564664b4f754b48';
-$shop_id = 101816614;
+// These are populated from the database after successful OAuth authorization.
+$access_token = '';
+$refresh_token = '';
+$shop_id = 0;
+$expire_in = 0;
 
 // Prevent direct web access to this file
 if (php_sapi_name() !== 'cli' && realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
