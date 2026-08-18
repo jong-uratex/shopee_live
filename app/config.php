@@ -84,3 +84,32 @@ function get_current_location(): string {
     }
     return $ip;
 }
+
+/**
+ * Get Shopee API connection status
+ */
+function get_shopee_api_status(): string {
+    $host = 'partner.shopeemobile.com';
+    $connected = @fsockopen($host, 443, $errno, $errstr, 2);
+    if ($connected) {
+        fclose($connected);
+        return 'Connected';
+    }
+    return 'Disconnected';
+}
+
+/**
+ * Get Shopee API stats
+ */
+function get_shopee_api_stats(): array {
+    global $access_token, $shop_id, $expire_in;
+    
+    $stats = [
+        'status' => get_shopee_api_status(),
+        'authenticated' => !empty($access_token),
+        'shop_id' => $shop_id ?? 'N/A',
+        'token_status' => !empty($access_token) ? 'Active' : 'Inactive',
+    ];
+    
+    return $stats;
+}
