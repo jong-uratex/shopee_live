@@ -24,12 +24,19 @@ require_login();
   <?php include __DIR__ . '/app/footer.php'; ?>
   
   <script>
-    // Hamburger menu toggle
     document.addEventListener('DOMContentLoaded', function() {
       const hamburger = document.getElementById('hamburger-toggle');
       const sideMenu = document.querySelector('.side-menu');
       const appBody = document.querySelector('.app-body');
+      const collapseToggle = document.getElementById('collapse-toggle');
 
+      // Load collapsed state from localStorage
+      const isCollapsed = localStorage.getItem('menuCollapsed') === 'true';
+      if (isCollapsed) {
+        sideMenu.classList.add('collapsed');
+      }
+
+      // Hamburger menu toggle (mobile)
       if (hamburger) {
         hamburger.addEventListener('click', function() {
           hamburger.classList.toggle('active');
@@ -57,6 +64,15 @@ require_login();
             sideMenu.classList.remove('mobile-open');
             appBody.classList.remove('menu-open');
           }
+        });
+      }
+
+      // Collapse toggle (desktop)
+      if (collapseToggle) {
+        collapseToggle.addEventListener('click', function() {
+          sideMenu.classList.toggle('collapsed');
+          // Save state to localStorage
+          localStorage.setItem('menuCollapsed', sideMenu.classList.contains('collapsed'));
         });
       }
     });
