@@ -146,28 +146,23 @@ function refreshShopeeAccessToken(string $refreshToken, int $shopId): array
     ];
 }
 
-function fetchShopeeProducts(string $accessToken, int $shopId): array
+function requestShopeeShopApi(string $path, string $accessToken, int $shopId, array $payload): array
 {
     global $partnerId, $partnerKey, $host;
 
-    $path = '/api/v2/product/get_item_list';
     $timestamp = (int) time();
-    $sign = hash_hmac('sha256', (string) $partnerId . $path . (string) $timestamp, $partnerKey);
-    $endpoint = sprintf(
-        '%s%s?partner_id=%s&shop_id=%s&access_token=%s&timestamp=%s&sign=%s',
-        $host,
-        $path,
-        $partnerId,
-        $shopId,
-        rawurlencode($accessToken),
-        $timestamp,
-        $sign
+    $sign = hash_hmac(
+        'sha256',
+        (string) $partnerId . $path . (string) $timestamp . $accessToken . (string) $shopId,
+        $partnerKey
     );
-
-    $payload = [
-        'page_no' => 1,
-        'page_size' => 20,
-    ];
+    $endpoint = $host . $path . '?' . http_build_query([
+        'partner_id' => $partnerId,
+        'shop_id' => $shopId,
+        'access_token' => $accessToken,
+        'timestamp' => $timestamp,
+        'sign' => $sign,
+    ], '', '&', PHP_QUERY_RFC3986);
 
     $ch = curl_init($endpoint);
     curl_setopt_array($ch, [
@@ -194,7 +189,7 @@ function fetchShopeeProducts(string $accessToken, int $shopId): array
             'success' => false,
             'message' => $error ?: 'cURL request failed',
             'http_code' => $httpCode,
-            'items' => [],
+            'data' => [],
         ];
     }
 
@@ -204,31 +199,116 @@ function fetchShopeeProducts(string $accessToken, int $shopId): array
             'success' => false,
             'message' => 'Invalid JSON response from Shopee.',
             'http_code' => $httpCode,
-            'items' => [],
+            'data' => [],
         ];
     }
 
-    $items = [];
-    if (isset($decoded['data']['item_list']) && is_array($decoded['data']['item_list'])) {
-        $items = $decoded['data']['item_list'];
-    } elseif (isset($decoded['item_list']) && is_array($decoded['item_list'])) {
-        $items = $decoded['item_list'];
-    }
-
-    $errorMessage = $decoded['message'] ?? $decoded['error'] ?? null;
-    if ($errorMessage !== null || ($httpCode >= 400 && $httpCode < 600)) {
+    $errorMessage = trim((string) ($decoded['message'] ?? ''));
+    $apiError = trim((string) ($decoded['error'] ?? ''));
+    if ($errorMessage !== '' || $apiError !== '' || $httpCode >= 400) {
         return [
             'success' => false,
-            'message' => (string) $errorMessage ?: 'Shopee service error.',
+            'message' => $errorMessage !== '' ? $errorMessage : ($apiError !== '' ? $apiError : 'Shopee service error.'),
             'http_code' => $httpCode,
-            'items' => $items,
+            'data' => $decoded,
         ];
     }
 
     return [
         'success' => true,
-        'message' => 'Products loaded.',
+        'message' => '',
         'http_code' => $httpCode,
+        'data' => $decoded,
+    ];
+}
+
+function fetchShopeeProducts(string $accessToken, int $shopId): array
+{
+    $path = '/api/v2/product/get_item_list';
+    $pageSize = 100;
+    $offset = 0;
+    $itemIds = [];
+    $itemStatuses = ['NORMAL', 'UNLIST', 'BANNED', 'REVIEWING'];
+
+    do {
+        $listResult = requestShopeeShopApi($path, $accessToken, $shopId, [
+            'item_status' => $itemStatuses,
+            'offset' => $offset,
+            'page_size' => $pageSize,
+        ]);
+        if (!$listResult['success']) {
+            return $listResult + ['items' => []];
+        }
+
+        $responseData = $listResult['data']['response'] ?? [];
+        $pageItems = $responseData['item'] ?? $responseData['item_list'] ?? [];
+        if (!is_array($pageItems)) {
+            $pageItems = [];
+        }
+
+        foreach ($pageItems as $item) {
+            if (isset($item['item_id'])) {
+                $itemIds[(string) $item['item_id']] = [
+                    'item_id' => (int) $item['item_id'],
+                    'status' => (string) ($item['item_status'] ?? 'Unknown'),
+                ];
+            }
+        }
+
+        $offset += count($pageItems);
+        $hasNextPage = isset($responseData['has_next_page'])
+            ? (bool) $responseData['has_next_page']
+            : count($pageItems) === $pageSize;
+    } while ($hasNextPage && count($pageItems) > 0);
+
+    if ($itemIds === []) {
+        return [
+            'success' => true,
+            'message' => 'No products returned for this shop.',
+            'http_code' => 200,
+            'items' => [],
+        ];
+    }
+
+    $items = [];
+    foreach (array_chunk(array_values($itemIds), 50) as $itemBatch) {
+        $detailResult = requestShopeeShopApi(
+            '/api/v2/product/get_item_base_info',
+            $accessToken,
+            $shopId,
+            ['item_id_list' => array_column($itemBatch, 'item_id')]
+        );
+        if (!$detailResult['success']) {
+            return $detailResult + ['items' => []];
+        }
+
+        $detailItems = $detailResult['data']['response']['item'] ?? [];
+        if (!is_array($detailItems)) {
+            continue;
+        }
+
+        foreach ($detailItems as $item) {
+            $itemId = (string) ($item['item_id'] ?? '');
+            $categoryNames = array_filter(array_map(
+                static fn(array $category): string => (string) ($category['display_category_name'] ?? $category['original_category_name'] ?? ''),
+                is_array($item['category_list'] ?? null) ? $item['category_list'] : []
+            ));
+            $priceInfo = $item['price_info'][0] ?? [];
+            $items[] = [
+                'name' => $item['item_name'] ?? 'Unnamed Product',
+                'sku' => $item['item_sku'] ?? '-',
+                'category' => $categoryNames !== [] ? implode(' / ', $categoryNames) : ($item['category_id'] ?? '-'),
+                'status' => $item['item_status'] ?? ($itemIds[$itemId]['status'] ?? 'Unknown'),
+                'price' => $priceInfo['current_price'] ?? null,
+                'currency' => $priceInfo['currency'] ?? 'PHP',
+            ];
+        }
+    }
+
+    return [
+        'success' => true,
+        'message' => 'Products loaded.',
+        'http_code' => 200,
         'items' => $items,
     ];
 }
@@ -312,18 +392,19 @@ if ($shopId > 0 && $accessToken !== '') {
           <?php else: ?>
             <?php foreach ($productsResult['items'] as $item): ?>
               <?php
-                $name = $item['name'] ?? $item['item_name'] ?? 'Unnamed Product';
-                $sku = $item['item_sku'] ?? $item['sku'] ?? '-';
-                $category = $item['category_name'] ?? $item['category'] ?? '-';
+                $name = $item['name'] ?? 'Unnamed Product';
+                $sku = $item['sku'] ?? '-';
+                $category = $item['category'] ?? '-';
                 $status = $item['status'] ?? 'Unknown';
-                $price = isset($item['price']) ? number_format((float) $item['price'] / 100000, 2, '.', ',') : '-';
+                $price = is_numeric($item['price'] ?? null) ? number_format((float) $item['price'], 2, '.', ',') : '-';
+                $currency = $item['currency'] ?? 'PHP';
               ?>
               <tr>
                 <td><?php echo htmlspecialchars((string) $name); ?></td>
                 <td><?php echo htmlspecialchars((string) $sku); ?></td>
                 <td><?php echo htmlspecialchars((string) $category); ?></td>
                 <td><span class="badge success"><?php echo htmlspecialchars((string) $status); ?></span></td>
-                <td>$<?php echo htmlspecialchars((string) $price); ?></td>
+                <td><?php echo htmlspecialchars((string) $currency . ' ' . $price); ?></td>
               </tr>
             <?php endforeach; ?>
           <?php endif; ?>
