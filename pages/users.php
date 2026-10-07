@@ -210,7 +210,7 @@ try {
 
         <button type="submit" class="btn-primary"><?php echo $userToEdit ? 'Save changes' : 'Create user'; ?></button>
         <?php if ($userToEdit): ?>
-          <a href="/jong/shopee_live/dashboard/?page=users" class="btn btn-secondary" style="margin-left:0.75rem;">Cancel</a>
+          <a href="/jong/shopee_live/dashboard.php?page=users" class="btn btn-secondary" style="margin-left:0.75rem;">Cancel</a>
         <?php endif; ?>
       </form>
     </div>
@@ -244,7 +244,7 @@ try {
                   </span>
                 </td>
                 <td>
-                  <a class="btn btn-sm" href="/jong/shopee_live/dashboard/?page=users&edit=<?php echo (int) $user['id']; ?>">Edit</a>
+                  <a class="btn btn-sm" href="/jong/shopee_live/dashboard.php?page=users&edit=<?php echo (int) $user['id']; ?>">Edit</a>
                   <form method="post" style="display:inline-block; margin:0;" onsubmit="return confirm('Delete this user?');">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
                     <input type="hidden" name="action" value="delete">

@@ -74,14 +74,14 @@
           <p class="menu-email"><?php echo htmlspecialchars($_SESSION['email'] ?? ''); ?></p>
         </div>
         <hr>
-        <a href="/jong/shopee_live/dashboard/?page=profile" class="menu-item">
+        <a href="/jong/shopee_live/dashboard.php?page=profile" class="menu-item">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>
           </svg>
           Profile
         </a>
-        <a href="/jong/shopee_live/dashboard/" class="menu-item">
+        <a href="/jong/shopee_live/dashboard.php" class="menu-item">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -89,7 +89,7 @@
           Dashboard
         </a>
         <?php if (!empty($_SESSION['is_superadmin']) || (isset($_SESSION['role_slug']) && $_SESSION['role_slug'] === 'admin')): ?>
-        <a href="/jong/shopee_live/dashboard/?page=users" class="menu-item">
+        <a href="/jong/shopee_live/dashboard.php?page=users" class="menu-item">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
             <circle cx="9" cy="7" r="4"></circle>
@@ -100,7 +100,7 @@
         </a>
         <?php endif; ?>
         <hr>
-        <a href="/jong/shopee_live/logout/" class="menu-item logout">
+        <a href="/jong/shopee_live/logout.php" class="menu-item logout">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <polyline points="16 17 21 12 16 7"></polyline>
