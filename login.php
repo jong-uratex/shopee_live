@@ -6,7 +6,7 @@
  * On success:
  *   1. Regenerates the session ID (session-fixation protection)
  *   2. Stores minimal user data in $_SESSION
- *   3. Redirects to success.php
+ *   3. Redirects to dashboard
  *
  * @author  Jenor Ricafort
  */

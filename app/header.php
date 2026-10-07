@@ -89,7 +89,7 @@
           Dashboard
         </a>
         <?php if (!empty($_SESSION['is_superadmin']) || (isset($_SESSION['role_slug']) && $_SESSION['role_slug'] === 'admin')): ?>
-        <a href="/jong/shopee_live/users.php" class="menu-item">
+        <a href="/jong/shopee_live/dashboard/?page=users" class="menu-item">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
             <circle cx="9" cy="7" r="4"></circle>

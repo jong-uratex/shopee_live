@@ -18,7 +18,11 @@ require_login();
   <div class="app-body">
     <?php include __DIR__ . '/app/menu.php'; ?>
     <main class="content-area">
-      <?php include __DIR__ . '/app/content_holder.php'; ?>
+      <?php
+      $page = $_GET['page'] ?? 'main';
+      if (!in_array($page, ['main', 'products', 'profile', 'users'], true)) $page = 'main';
+      include __DIR__ . '/pages/' . $page . '.php';
+      ?>
     </main>
   </div>
   <?php include __DIR__ . '/app/footer.php'; ?>
