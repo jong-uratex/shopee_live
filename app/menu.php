@@ -24,6 +24,12 @@ $is_admin = !empty($_SESSION['is_superadmin']) || (isset($_SESSION['role_slug'])
         <span class="label">Products</span>
       </a>
     </li>
+    <li>
+      <a href="/jong/shopee_live/dashboard.php?page=orders" class="<?php echo $current_page === 'orders' ? 'active' : ''; ?>" title="Orders">
+        <span class="icon">📦</span>
+        <span class="label">Orders</span>
+      </a>
+    </li>
     <?php if ($is_admin): ?>
       <li>
         <a href="/jong/shopee_live/dashboard.php?page=users" class="<?php echo $current_page === 'users' ? 'active' : ''; ?>" title="Users">

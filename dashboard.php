@@ -20,7 +20,7 @@ require_login();
     <main class="content-area">
       <?php
       $page = $_GET['page'] ?? 'main';
-      if (!in_array($page, ['main', 'products', 'profile', 'users'], true)) $page = 'main';
+      if (!in_array($page, ['main', 'products', 'orders', 'profile', 'users'], true)) $page = 'main';
       include __DIR__ . '/pages/' . $page . '.php';
       ?>
     </main>
