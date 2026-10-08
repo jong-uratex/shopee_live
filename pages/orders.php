@@ -50,6 +50,15 @@ function ordersSaveOauth(string $accessToken, string $refreshToken, int $shopId)
     }
 }
 
+$ordersDebug = [];
+
+// Masks tokens and signatures so the debug trace is safe to display or share.
+function ordersRedact(string $text): string
+{
+    $text = preg_replace('/((?:access_token|refresh_token|sign)=)[^&\s"]+/i', '$1***', $text);
+    return preg_replace('/("(?:access_token|refresh_token)"\s*:\s*")[^"]*(")/i', '$1***$2', $text);
+}
+
 function ordersCurl(string $url, ?array $body = null): array
 {
     $ch = curl_init($url);
@@ -70,6 +79,15 @@ function ordersCurl(string $url, ?array $body = null): array
     $error = curl_error($ch);
     $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+
+    global $ordersDebug;
+    $ordersDebug[] = [
+        'method' => $body !== null ? 'POST' : 'GET',
+        'url' => ordersRedact($url),
+        'http_code' => $httpCode,
+        'curl_error' => $error,
+        'response' => $response === false ? '' : ordersRedact(mb_substr((string) $response, 0, 3000)),
+    ];
 
     if ($response === false || $error !== '') {
         return ['success' => false, 'message' => $error ?: 'cURL request failed', 'http_code' => $httpCode, 'data' => []];
@@ -327,6 +345,8 @@ $lastShown = min($currentPage * $perPage, $totalOrders);
   .pager-links .disabled { color: #94a3b8; background: #f8fafc; }
   .pager-links .gap { border-color: transparent; background: transparent; }
   .pager-info { font-size: 13px; color: #64748b; }
+  .orders-debug { margin-top: 16px; font-size: 12px; }
+  .orders-debug pre { background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
 </style>
 
 <section class="panel">
@@ -371,6 +391,15 @@ $lastShown = min($currentPage * $perPage, $totalOrders);
       <p><?php echo htmlspecialchars((string) $result['message']); ?></p>
       <?php if (!empty($result['http_code'])): ?>
         <small>HTTP status: <?php echo (int) $result['http_code']; ?></small>
+      <?php endif; ?>
+      <?php $d = $result['data'] ?? []; ?>
+      <?php if (!empty($d['error']) || !empty($d['request_id'])): ?>
+        <p>
+          <small>
+            Shopee error: <code><?php echo htmlspecialchars((string) ($d['error'] ?? '-')); ?></code>
+            · Request ID: <code><?php echo htmlspecialchars((string) ($d['request_id'] ?? '-')); ?></code>
+          </small>
+        </p>
       <?php endif; ?>
     </div>
   <?php else: ?>
@@ -445,5 +474,32 @@ $lastShown = min($currentPage * $perPage, $totalOrders);
         </div>
       <?php endif; ?>
     </nav>
+  <?php endif; ?>
+
+  <?php if (!$result['success']): ?>
+    <details class="orders-debug" open>
+      <summary>Debug details</summary>
+      <pre><?php
+        echo htmlspecialchars(implode("\n", [
+            'API host:        ' . ($host ?? '(not set)'),
+            'Partner ID:      ' . ($partnerId ?? '(not set)'),
+            'Shop ID:         ' . $shopId,
+            'Access token:    ' . ($accessToken !== '' ? 'present (' . strlen($accessToken) . ' chars)' : 'MISSING'),
+            'Refresh token:   ' . ($refreshToken !== '' ? 'present' : 'MISSING'),
+            'Server time:     ' . date('c') . ' (' . time() . ')',
+            'Filters:         days=' . $days . ' status=' . ($statusFilter ?: 'all'),
+        ]));
+        foreach ($ordersDebug as $i => $step) {
+            echo htmlspecialchars("\n\n--- Call #" . ($i + 1) . " ---\n"
+                . $step['method'] . ' ' . $step['url'] . "\n"
+                . 'HTTP ' . $step['http_code']
+                . ($step['curl_error'] !== '' ? ' | cURL error: ' . $step['curl_error'] : '') . "\n"
+                . 'Response: ' . $step['response']);
+        }
+        if ($ordersDebug === []) {
+            echo htmlspecialchars("\n\nNo Shopee calls were made (missing shop ID or access token).");
+        }
+      ?></pre>
+    </details>
   <?php endif; ?>
 </section>
