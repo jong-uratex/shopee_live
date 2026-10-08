@@ -112,7 +112,7 @@ function ordersRefreshToken(string $refreshToken, int $shopId): array
 {
     global $partnerId, $partnerKey, $host;
 
-    $path = '/api/v2/auth/token/get';
+    $path = '/api/v2/auth/access_token/get';
     $timestamp = time();
     $sign = hash_hmac('sha256', $partnerId . $path . $timestamp, $partnerKey);
     $url = sprintf('%s%s?partner_id=%s&timestamp=%s&sign=%s', $host, $path, $partnerId, $timestamp, $sign);
@@ -283,7 +283,7 @@ if ($shopId > 0 && $accessToken !== '') {
             $useCache = false;
             $result = $load();
         } else {
-            $result['message'] = $refreshed['message'];
+            $result['message'] .= ' (token refresh failed: ' . $refreshed['message'] . ')';
         }
     }
 
